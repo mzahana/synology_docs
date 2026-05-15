@@ -137,8 +137,159 @@ CUSTOM_BUILD=false
 
 
 
-3. **Compose Content**: Paste the simplified Plane `docker-compose.yaml` (ensure image versions are hardcoded to `v1.3.0` to avoid Synology GUI errors).
+3. **Compose Content**: Paste the following `docker-compose.yaml` (ensure image versions are hardcoded to `v1.3.0` to avoid Synology GUI errors).
+```docker
+version: '3.8'
 
+x-db-env: &db-env
+  PGHOST: ${PGHOST}
+  PGDATABASE: ${PGDATABASE}
+  POSTGRES_USER: ${POSTGRES_USER}
+  POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+  POSTGRES_DB: ${POSTGRES_DB}
+  POSTGRES_PORT: ${POSTGRES_PORT}
+  PGDATA: ${PGDATA}
+
+x-redis-env: &redis-env
+  REDIS_HOST: ${REDIS_HOST}
+  REDIS_PORT: ${REDIS_PORT}
+  REDIS_URL: ${REDIS_URL}
+
+x-minio-env: &minio-env
+  MINIO_ROOT_USER: ${AWS_ACCESS_KEY_ID}
+  MINIO_ROOT_PASSWORD: ${AWS_SECRET_ACCESS_KEY}
+
+x-aws-s3-env: &aws-s3-env
+  AWS_REGION: ${AWS_REGION}
+  AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+  AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+  AWS_S3_ENDPOINT_URL: ${AWS_S3_ENDPOINT_URL}
+  AWS_S3_BUCKET_NAME: ${AWS_S3_BUCKET_NAME}
+
+x-proxy-env: &proxy-env
+  APP_DOMAIN: ${APP_DOMAIN}
+  FILE_SIZE_LIMIT: ${FILE_SIZE_LIMIT}
+  LISTEN_HTTP_PORT: ${LISTEN_HTTP_PORT}
+  LISTEN_HTTPS_PORT: ${LISTEN_HTTPS_PORT}
+  BUCKET_NAME: ${AWS_S3_BUCKET_NAME}
+
+x-mq-env: &mq-env
+  RABBITMQ_HOST: ${RABBITMQ_HOST}
+  RABBITMQ_PORT: ${RABBITMQ_PORT}
+  RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
+  RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
+  RABBITMQ_DEFAULT_VHOST: ${RABBITMQ_VHOST}
+  RABBITMQ_VHOST: ${RABBITMQ_VHOST}
+
+x-app-env: &app-env
+  WEB_URL: ${WEB_URL}
+  CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS}
+  DATABASE_URL: ${DATABASE_URL}
+  SECRET_KEY: ${SECRET_KEY}
+  AMQP_URL: ${AMQP_URL}
+  LIVE_SERVER_SECRET_KEY: ${LIVE_SERVER_SECRET_KEY}
+
+services:
+  web:
+    image: makeplane/plane-frontend:v1.3.0
+    restart: always
+    depends_on: [api, worker]
+
+  space:
+    image: makeplane/plane-space:v1.3.0
+    restart: always
+    depends_on: [api, worker, web]
+
+  admin:
+    image: makeplane/plane-admin:v1.3.0
+    restart: always
+    depends_on: [api, web]
+
+  live:
+    image: makeplane/plane-live:v1.3.0
+    environment: { <<: [*live-env, *redis-env] }
+    restart: always
+    depends_on: [api, web]
+
+  api:
+    image: makeplane/plane-backend:v1.3.0
+    command: ./bin/docker-entrypoint-api.sh
+    restart: always
+    volumes: [logs_api:/code/plane/logs]
+    environment: { <<: [*app-env, *db-env, *redis-env, *minio-env, *aws-s3-env, *proxy-env] }
+    depends_on: [plane-db, plane-redis, plane-mq]
+
+  worker:
+    image: makeplane/plane-backend:v1.3.0
+    command: ./bin/docker-entrypoint-worker.sh
+    restart: always
+    volumes: [logs_worker:/code/plane/logs]
+    environment: { <<: [*app-env, *db-env, *redis-env, *minio-env, *aws-s3-env, *proxy-env] }
+    depends_on: [api, plane-db, plane-redis, plane-mq]
+
+  beat-worker:
+    image: makeplane/plane-backend:v1.3.0
+    command: ./bin/docker-entrypoint-beat.sh
+    restart: always
+    volumes: [logs_beat-worker:/code/plane/logs]
+    environment: { <<: [*app-env, *db-env, *redis-env, *minio-env, *aws-s3-env, *proxy-env] }
+    depends_on: [api, plane-db, plane-redis, plane-mq]
+
+  migrator:
+    image: makeplane/plane-backend:v1.3.0
+    command: ./bin/docker-entrypoint-migrator.sh
+    restart: on-failure
+    volumes: [logs_migrator:/code/plane/logs]
+    environment: { <<: [*app-env, *db-env, *redis-env, *minio-env, *aws-s3-env, *proxy-env] }
+    depends_on: [plane-db, plane-redis]
+
+  plane-db:
+    image: postgres:15.7-alpine
+    command: postgres -c 'max_connections=1000'
+    restart: always
+    environment: { <<: *db-env }
+    volumes: [pgdata:/var/lib/postgresql/data]
+
+  plane-redis:
+    image: valkey/valkey:7.2.11-alpine
+    restart: always
+    volumes: [redisdata:/data]
+
+  plane-mq:
+    image: rabbitmq:3.13.6-management-alpine
+    restart: always
+    environment: { <<: *mq-env }
+    volumes: [rabbitmq_data:/var/lib/rabbitmq]
+
+  plane-minio:
+    image: minio/minio:latest
+    command: server /export --console-address ":9090"
+    restart: always
+    environment: { <<: *minio-env }
+    volumes: [uploads:/export]
+
+  proxy:
+    image: makeplane/plane-proxy:v1.3.0
+    restart: always
+    environment: { <<: *proxy-env }
+    ports:
+      - "${LISTEN_HTTP_PORT}:80"
+      - "${LISTEN_HTTPS_PORT}:443"
+    volumes: [proxy_config:/config, proxy_data:/data]
+    depends_on: [web, api, space, admin, live]
+
+volumes:
+  pgdata:
+  redisdata:
+  uploads:
+  logs_api:
+  logs_worker:
+  logs_beat-worker:
+  logs_migrator:
+  rabbitmq_data:
+  proxy_config:
+  proxy_data:
+```
 
 4. **Wait**: Building takes 5–10 minutes. The `migrator` container will eventually stop—this is normal.
 
