@@ -8,9 +8,9 @@ Welcome to the **Synology Docs** repository! This repository contains comprehens
 
 | Guide | Description | Highlights |
 | :--- | :--- | :--- |
-| ✈️ **[Plane on Synology DSM 7.2](file:///home/mabdelkader/src/synology_docs/Plane_Synology_Guide.md)** | Step-by-step guide to deploying Plane (open-source project management tool) locally via Container Manager. | Custom `.env` template, sanitized `docker-compose.yaml`, Synology CLI bug workaround, database & minio storage setup. |
-| ☁️ **[Plane + Cloudflare Tunnel Setup (5G/CGNAT)](file:///home/mabdelkader/src/synology_docs/Synology_Plane_Cloudflare_Setup.md)** | End-to-end setup for exposing Plane securely to the internet behind 5G or CGNAT without port forwarding. | Cloudflare Zero Trust Tunnels, custom domain routing, HTTPS, and local network DNS filtering workaround. |
-| 🌐 **[ZeroTier Behind Strict Firewalls](file:///home/mabdelkader/src/synology_docs/zerotier_synology_guide.md)** | Deploying ZeroTier SD-WAN on Synology Docker under restrictive networks or enterprise firewalls. | Persistent TUN driver (`/dev/net/tun`) setup, folder permission fixes, TCP relay fallback, and routing configs. |
+| ✈️ **[Plane on Synology DSM 7.2](Plane_Synology_Guide.md)** | Step-by-step guide to deploying Plane (open-source project management tool) locally via Container Manager. | Custom `.env` template, sanitized `docker-compose.yaml`, Synology CLI bug workaround, database & minio storage setup. |
+| ☁️ **[Plane + Cloudflare Tunnel Setup (5G/CGNAT)](Synology_Plane_Cloudflare_Setup.md)** | End-to-end setup for exposing Plane securely to the internet behind 5G or CGNAT without port forwarding. | Cloudflare Zero Trust Tunnels, custom domain routing, HTTPS, and local network DNS filtering workaround. |
+| 🌐 **[ZeroTier Behind Strict Firewalls](zerotier_synology_guide.md)** | Deploying ZeroTier SD-WAN on Synology Docker under restrictive networks or enterprise firewalls. | Persistent TUN driver (`/dev/net/tun`) setup, folder permission fixes, TCP relay fallback, and routing configs. |
 
 ---
 
@@ -32,12 +32,12 @@ Most guides in this repository assume the following setup on your Synology NAS:
 
 ### 1. Project Management with Plane
 Deploy Plane locally on port `8090` using a clean Docker Compose file tailored specifically for Synology DSM Container Manager.
-- **Local Access**: See [Plane_Synology_Guide.md](file:///home/mabdelkader/src/synology_docs/Plane_Synology_Guide.md)
-- **Public Domain Access (CGNAT/5G Bypass)**: See [Synology_Plane_Cloudflare_Setup.md](file:///home/mabdelkader/src/synology_docs/Synology_Plane_Cloudflare_Setup.md)
+- **Local Access**: See [Plane_Synology_Guide.md](Plane_Synology_Guide.md)
+- **Public Domain Access (CGNAT/5G Bypass)**: See [Synology_Plane_Cloudflare_Setup.md](Synology_Plane_Cloudflare_Setup.md)
 
 ### 2. Remote Access via ZeroTier VPN
 Bypass CGNAT, strict NATs, or restricted UDP ports by running ZeroTier in a privileged container with persistent TUN module injection.
-- **ZeroTier Guide**: See [zerotier_synology_guide.md](file:///home/mabdelkader/src/synology_docs/zerotier_synology_guide.md)
+- **ZeroTier Guide**: See [zerotier_synology_guide.md](zerotier_synology_guide.md)
 
 ---
 
@@ -57,4 +57,4 @@ Bypass CGNAT, strict NATs, or restricted UDP ports by running ZeroTier in a priv
 
 ## 📜 License
 
-This repository is licensed under the [MIT License](file:///home/mabdelkader/src/synology_docs/LICENSE).
+This repository is licensed under the [MIT License](LICENSE).
