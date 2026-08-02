@@ -359,3 +359,23 @@ networks:
 > Clear your browser cache or test in an Incognito window. Most modern browsers cache old 301 redirects aggressively.
 > 
 >
+
+> **Cloudflare Tunnel Fails with "i/o timeout" on Port 7844**
+> **Symptom:** 
+> The Plane application suddenly becomes inaccessible via the public hostname. When inspecting the logs for the `cloudflared-tunnel` container in Synology Container Manager, you see repeated connection errors like:
+> `ERR Unable to establish connection with Cloudflare edge error="DialContext error: dial tcp [IP_ADDRESS]:7844: i/o timeout"`
+> 
+> **Cause:**
+> This is often caused by aggressive DNS filtering on the local network. Security appliances (such as Fortinet/FortiGate firewalls) or certain ISPs may categorize tunneling services as "Proxy Avoidance" and intercept the DNS lookup for Cloudflare's servers (`*.argotunnel.com`). Instead of returning Cloudflare's actual IP address, the local DNS returns the IP of a firewall block page. Because this block page does not accept traffic on TCP port 7844, the container's connection times out.
+> 
+> **Solution:**
+> Bypass the local network's DNS filtering by manually configuring the Synology NAS to use a trusted public DNS provider, such as Cloudflare (1.1.1.1) or Google (8.8.8.8).
+> 
+> 1. Log into your Synology NAS (DSM).
+> 2. Navigate to **Control Panel** > **Network** > **General**.
+> 3. Check the box for **Manually configure DNS server**.
+> 4. Set the **Preferred DNS Server** to `1.1.1.1` (Cloudflare).
+> 5. Set the **Alternative DNS Server** to `1.0.0.1` (Cloudflare) or `8.8.8.8` (Google).
+> 6. Click **Apply** to save the changes.
+> 7. Open **Container Manager**, locate your `cloudflared-tunnel` container, and restart it. The tunnel should now successfully resolve the correct IP address and connect.
+>
